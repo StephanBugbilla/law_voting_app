@@ -17,8 +17,14 @@
       <input type="text" id="idNumber" placeholder="Enter Your ID number" required>
       <input type="submit" value="Login">
     </form>
+    <button id="adminLoginBtn" style="margin-top: 18px; width: 100%;">Login as Admin</button>
   </div>
 
   <script type="module" src="login.js" defer></script>
+  <script>
+    document.getElementById("adminLoginBtn").onclick = function() {
+      window.location.href = "admin.html";
+    };
+  </script>
 </body>
 </html>
