@@ -28,7 +28,8 @@ const csvWriter = createCsvWriter({
     {id: 'email', title: 'email'},
     {id: 'password', title: 'password'},
     {id: 'hasVoted', title: 'hasVoted'},
-    {id: 'uid', title: 'uid'}
+    {id: 'uid', title: 'uid'},
+    {id: 'used', title: 'used'} // Add used column
   ]
 });
 
@@ -47,6 +48,8 @@ fs.createReadStream('Original.csv')
     const password = (row.password || row.idNumber || '').replace(/\s+/g, '');
     const hasVoted = (row.hasVoted || 'false').toString().toLowerCase();
     const uid = (row.uid || row.idNumber || '').replace(/\s+/g, '').toUpperCase();
+    // Use value from CSV, default to 'false' only if missing
+    const used = (typeof row.used !== "undefined" && row.used !== "") ? row.used.toString().toLowerCase() : 'false';
 
     // Check if idNumber, password, and uid are not the same
     if (!(idNumber === password && password === uid)) {
@@ -66,7 +69,7 @@ fs.createReadStream('Original.csv')
     }
     seenUids.add(uid);
 
-    users.push({ name, idNumber, phone, email, password, hasVoted, uid });
+    users.push({ name, idNumber, phone, email, password, hasVoted, uid, used });
   })
   .on('end', () => {
     csvWriter.writeRecords(users).then(() => {

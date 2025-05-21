@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-firestore.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -17,6 +17,35 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Autofill index number from token in URL
+window.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  if (token) {
+    const idNumber = decodeURIComponent(token);
+    document.getElementById("idNumber").value = idNumber;
+
+    // Check Firestore for used status
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("idNumber", "==", idNumber));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      alert("No user found with this ID number.");
+      document.getElementById("loginForm").querySelector("button[type='submit']").disabled = true;
+      return;
+    }
+
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
+
+    if (userData.used === true) {
+      alert("This link has already been used.");
+      document.getElementById("loginForm").querySelector("button[type='submit']").disabled = true;
+    }
+  }
+});
+
 document.getElementById("loginForm").addEventListener("submit", async function(event) {
   event.preventDefault();
   const idNumber = document.getElementById("idNumber").value.trim();
@@ -26,7 +55,7 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     return;
   }
 
-  // 1. Get user document from Firestore
+  // Get user document from Firestore
   const usersRef = collection(db, "users");
   const q = query(usersRef, where("idNumber", "==", idNumber));
   const querySnapshot = await getDocs(q);
@@ -36,20 +65,31 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     return;
   }
 
-  const userData = querySnapshot.docs[0].data();
+  const userDoc = querySnapshot.docs[0];
+  const userData = userDoc.data();
+
+  // Check if link already used
+  if (userData.used === true) {
+    alert("This link has already been used.");
+    return;
+  }
+
   const email = userData.email;
   const password = idNumber; // Or userData.password if stored
 
   try {
-    // 2. Sign in using Firebase Auth with retrieved email
+    // Sign in using Firebase Auth with retrieved email
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-    // 3. Store session info
+    // Mark as used in Firestore (use the document ID directly)
+    await updateDoc(doc(db, "users", userDoc.id), { used: true });
+
+    // Store session info
     sessionStorage.setItem("userIdNumber", idNumber);
     sessionStorage.setItem("userEmail", email);
     sessionStorage.setItem("userUid", userCredential.user.uid);
 
-    // 4. Redirect
+    // Redirect
     window.location.href = "voting_page.html";
   } catch (error) {
     alert("Authentication failed: " + error.message);

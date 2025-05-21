@@ -42,6 +42,7 @@ fs.createReadStream("users.csv")
           email: user.email,
           phone: user.phone,
           hasVoted: user.hasVoted === "true" || user.hasVoted === true,
+          used: user.used === "true" || user.used === true, // <-- Add this line
         });
 
         createdCount++;
