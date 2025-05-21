@@ -40,8 +40,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     const userData = userDoc.data();
 
     if (userData.used === true) {
-      alert("This link has already been used.");
-      document.getElementById("loginForm").querySelector("button[type='submit']").disabled = true;
+      // Redirect to a custom page if link has been used
+      window.location.href = "link_used.html";
+      return;
     }
   }
 });
